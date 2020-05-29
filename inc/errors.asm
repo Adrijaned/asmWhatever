@@ -1,0 +1,4 @@
+ENOTTY		equ	25
+ENOSYS		equ	38
+EINVAL		equ	22
+E_ENOTSUP	equ	100	; ENETDOWN, redefined
