@@ -109,3 +109,32 @@ section .bss
 
 .retMsg:
 	resb 10
+
+section .text
+
+getScreenDimensions:
+	mov	rax,	SYS_WRITE
+	mov	rdi,	STDOUT
+	mov	rsi,	.message1
+	mov	rdx,	.message1End - .message1
+	syscall
+	call	getCursorPos
+	push	rdx
+	push	rax
+	mov	rax,	SYS_WRITE
+	mov	rdi,	STDOUT
+	mov	rsi,	.message2
+	mov	rdx,	.message2End - .message2
+	syscall
+	pop	rax
+	pop	rdx
+	ret
+
+section .data
+
+.message1:
+	db `\e[s\e[999;999H`
+.message1End:
+.message2:
+	db `\e[u`
+.message2End:

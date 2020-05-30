@@ -1,6 +1,6 @@
 global _start
 extern strToDW, getCursorPos, setIoctl, resetIoctl, DWToStr
-extern findChar
+extern findChar, getScreenDimensions
 
 %include "inc/constants.asm"
 
@@ -8,7 +8,7 @@ section .text
 
 _start:
 	call	setIoctl
-	call	getCursorPos
+	call	getScreenDimensions
 	mov	rax,	rdx
 	mov	rdx,	mytest
 	call	DWToStr
