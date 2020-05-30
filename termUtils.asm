@@ -1,6 +1,8 @@
 global getCursorPos, getScreenDimensions
 global setIoctl, resetIoctl
 
+extern findChar, strToDW
+
 %include "inc/constants.asm"
 %include "inc/errors.asm"
 
@@ -59,6 +61,9 @@ section .bss
 
 section .text
 
+; returns one-indexed x:y in rdx:rax
+; clobbers rdi, rsi, r10
+; requires terminal set up
 getCursorPos:
 	mov	rax,	SYS_WRITE
 	mov	rdi,	STDOUT
@@ -77,12 +82,21 @@ getCursorPos:
 	mov	rdi,	ENOTTY
 	syscall
 .readOK:
-	mov	byte	[.retMsg],	"X"
+	mov	word	[.retMsg],	0
+	mov	rsi,	rax
+	mov	rdx,	.retMsg
+	mov	rax,	";"
+	call	findChar
+	mov	r10,	rax
+	lea	rdi,	[rax - 2]
+	mov	rax,	.retMsg + 2
+	call	strToDW
 	mov	rdx,	rax
-	mov	rax,	SYS_WRITE
-	mov	rdi,	STDOUT
-	mov	rsi,	.retMsg
-	syscall
+	lea	rax,	[.retMsg + 1 + r10]
+	mov	rdi,	rsi
+	sub	rdi,	r10
+	sub	rdi,	2
+	call	strToDW
 	ret
 
 section .data

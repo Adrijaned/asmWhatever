@@ -1,4 +1,5 @@
 global strToDW:function, DWToStr:function
+global findChar:function
 
 %include "inc/constants.asm"
 %include "inc/errors.asm"
@@ -7,21 +8,17 @@ section .text
 
 ; rax = const char *buf
 ; rdi = bufLen. Must be greater than 0
-; rsi = base (implemented only 10)
 ; returns double word in rax, zeroes rdi. Only unsigned
 strToDW:
-	cmp	rsi,	10
-	jne	.err1
 	cmp	rdi,	0
 	jle	.err2
-.baseTen:
 	push	r10
 	push	rdx
 	push	r9
 	mov	r9,	10
 	mov	r10,	rax
 	xor	eax,	eax
-.baseTen.loop:
+.loop:
 	cmp	rdi,	0
 	jle	.done
 	dec	rdi
@@ -33,17 +30,13 @@ strToDW:
 	add	al,	[r10]
 	sub	rax,	0x30
 	inc	r10
-	jmp	.baseTen.loop
+	jmp	.loop
 .done:
 	xor	edi,	edi
 	pop	r9
 	pop	rdx
 	pop	r10
 	ret
-.err1:
-	mov	rax,	SYS_EXIT
-	mov	rdi,	ENOSYS
-	syscall
 .err2:
 	mov	rax,	SYS_EXIT
 	mov	rdi,	EINVAL
@@ -58,6 +51,7 @@ strToDW:
 ; out
 ; rax = buflen
 DWToStr:
+	cmp	eax,	0
 	je	.zero
 	push	r11
 	push	r12
@@ -90,3 +84,29 @@ DWToStr:
 section .bss
 
 .temp: resb 10
+
+section .text
+
+; al = char to find
+; rdx = char* buf
+; rsi = bufLen
+; out:
+; rax = first position of al in buf, or -1 if not found
+findChar:
+	push	rbx
+	xor	ebx,	ebx
+.loop:
+	cmp	rbx,	rsi
+	jge	.notFound
+	cmp	al,	byte	[rdx + rbx]
+	je	.found
+	inc	rbx
+	jmp	.loop
+.found:
+	mov	rax,	rbx
+	pop	rbx
+	ret
+.notFound:
+	mov	rax,	-1
+	pop	rbx
+	ret
