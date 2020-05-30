@@ -1,10 +1,9 @@
 global getCursorPos, getScreenDimensions
 global setIoctl, resetIoctl
 
-extern findChar, strToDW
-
 %include "inc/constants.asm"
 %include "inc/errors.asm"
+%include "inc/symbols.asm"
 
 section .text
 ;https://stackoverflow.com/questions/3305005/how-do-i-read-single-character-input-from-keyboard-using-nasm-assembly-under-u
@@ -61,9 +60,6 @@ section .bss
 
 section .text
 
-; returns one-indexed x:y in rdx:rax
-; clobbers rdi, rsi, r10
-; requires terminal set up
 getCursorPos:
 	mov	rax,	SYS_WRITE
 	mov	rdi,	STDOUT

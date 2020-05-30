@@ -6,9 +6,6 @@ global findChar:function
 
 section .text
 
-; rax = const char *buf
-; rdi = bufLen. Must be greater than 0
-; returns double word in rax, zeroes rdi. Only unsigned
 strToDW:
 	cmp	rdi,	0
 	jle	.err2
@@ -46,10 +43,6 @@ strToDW:
 	mov	rdi,	E_ENOTSUP
 	syscall
 
-; eax = in num
-; rdx = char* buf of sufficient length
-; out
-; rax = buflen
 DWToStr:
 	cmp	eax,	0
 	je	.zero
@@ -87,11 +80,6 @@ section .bss
 
 section .text
 
-; al = char to find
-; rdx = char* buf
-; rsi = bufLen
-; out:
-; rax = first position of al in buf, or -1 if not found
 findChar:
 	push	rbx
 	xor	ebx,	ebx

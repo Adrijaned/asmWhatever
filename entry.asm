@@ -1,8 +1,7 @@
 global _start
-extern strToDW, getCursorPos, setIoctl, resetIoctl, DWToStr
-extern findChar, getScreenDimensions
 
 %include "inc/constants.asm"
+%include "inc/symbols.asm"
 
 section .text
 
