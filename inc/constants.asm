@@ -4,3 +4,4 @@ STDIN		equ	0
 STDOUT		equ	1
 SYS_EXIT	equ	60
 SYS_IOCTL	equ	16
+SYS_NANOSLEEP	equ	35

@@ -49,6 +49,7 @@ extern	findChar
 
 ;; Sets up console into non-canonical mode.
 ;; Must be called as first thing in the program.
+;; Also clears screen.
 ;; IN:
 ;; OUT:
 ;; DIRTY:
@@ -84,3 +85,21 @@ extern resetIoctl
 ;; - r10
 ;; ERR:
 extern getScreenDimensions
+
+;; Prints string to terminal position.
+;; Moves cursor after the printed text.
+;; IN:
+;; - rax Terminal column, one indexed
+;; - rdx Terminal row, one indexed
+;; - rdi Pointer to the text
+;; - rsi Length of the text
+;; OUT:
+;; DIRTY: TODO
+;; - r10
+;; - r11
+;; - rdi
+;; - rsi
+;; - rax
+;; - rdx
+;; ERR: TODO
+extern printToPos

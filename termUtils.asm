@@ -1,5 +1,6 @@
 global getCursorPos, getScreenDimensions
 global setIoctl, resetIoctl
+global printToPos
 
 %include "inc/constants.asm"
 %include "inc/errors.asm"
@@ -29,8 +30,19 @@ setIoctl:
 	TCSETS	equ	0x5402
 	mov	rsi,	TCSETS
 	syscall
+	mov     rax,    SYS_WRITE
+        mov     rdi,    STDOUT
+        mov     rsi,    .alternateScreenMsg
+        mov     rdx,    (.alternateScreenMsgEnd - .alternateScreenMsg)
+        syscall
 	ret
 
+section .data
+.alternateScreenMsg:
+	db `\e[?1049h`
+.alternateScreenMsgEnd:
+
+section .text
 resetIoctl:
 	cmp	byte	[Ioctl.isCustomTermMode],	1
 	je	.notSetYet
@@ -46,11 +58,20 @@ resetIoctl:
 	mov	rsi,	TCSETS
 	mov	rdx,	Ioctl.termios
 	syscall
+	mov     rax,    SYS_WRITE
+        mov     rdi,    STDOUT
+        mov     rsi,    .alternateScreenMsg
+        mov     rdx,    (.alternateScreenMsgEnd - .alternateScreenMsg)
+        syscall
 	ret
 
-Ioctl:
 section .data
 
+.alternateScreenMsg:
+	db `\e[?1049l`
+.alternateScreenMsgEnd:
+
+Ioctl:
 .isCustomTermMode:	db	0
 
 section .bss
@@ -134,3 +155,33 @@ section .data
 .message2:
 	db `\e[u`
 .message2End:
+
+section .text
+
+printToPos:
+	mov	r10,	rdx
+	mov	rdx,	.messageMove + 2
+	call	DWToStr
+	lea	rdx,	[.messageMove + rax + 3]
+	mov	[rdx - 1],	byte	';'
+	mov	rax,	r10
+	call	DWToStr
+	add	rdx,	rax
+	mov	[rdx],	byte	'H'
+	mov	rax,	SYS_WRITE
+	mov	r8,	rdi
+	mov	r9,	rsi
+	mov	rdi,	STDOUT
+	mov	rsi,	.messageMove
+	sub	rdx,	.messageMove - 1
+	syscall
+	mov	rax,	SYS_WRITE
+	mov	rsi,	r8
+	mov	rdx,	r9
+	syscall
+	ret
+
+section .data
+
+.messageMove:
+	db `\e[`, 0, 0, 0, 0, 0, 0, 0, 0
