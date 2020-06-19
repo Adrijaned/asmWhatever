@@ -77,8 +77,8 @@ extern resetIoctl
 ;; Returns the current size of the terminal
 ;; IN:
 ;; OUT:
-;; - rdx The width of the terminal
-;; - rax The height of the terminal
+;; - rax The width of the terminal
+;; - rdx The height of the terminal
 ;; DIRTY:
 ;; - rdi
 ;; - rsi
@@ -94,12 +94,45 @@ extern getScreenDimensions
 ;; - rdi Pointer to the text
 ;; - rsi Length of the text
 ;; OUT:
-;; DIRTY: TODO
+;; DIRTY:
 ;; - r10
 ;; - r11
 ;; - rdi
 ;; - rsi
 ;; - rax
 ;; - rdx
-;; ERR: TODO
+;; - r8
+;; - r9
+;; ERR:
 extern printToPos
+
+;; Handles an input key. Assumes input processing has been done (ANSI
+;; escapes converted to respective symbols, and TODO unicode UTF-8
+;; values handled as single value.
+;; IN:
+;; - rax The key pressed, UTF-8
+;; OUT:
+;; DIRTY:
+;; - rax
+;; - rsi
+;; - rdi
+;; - rdx
+;; - r8
+;; - r9
+;; - r10
+;; - r11
+;; ERR:
+extern processKey
+
+;; Resets the terminal and exits with code.
+;; IN:
+;; - rax The exit code
+;; OUT:
+;; DIRTY:
+;; ERR:
+extern properExit
+
+;; Provides pre-fetched size of the screen.
+;; width, height are aliases of x, y
+extern screenDimensions.x, screenDimensions.y
+extern screenDimensions.width, screenDimensions.height

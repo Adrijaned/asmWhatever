@@ -1,5 +1,5 @@
 .PHONY: all
-all : termUtils.o common.o entry.o
+all : termUtils.o common.o entry.o game.o
 	ld -oo $^
 
 %.o : %.asm

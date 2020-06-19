@@ -1,8 +1,10 @@
 global strToDW:function, DWToStr:function
 global findChar:function
+global properExit:function
 
 %include "inc/constants.asm"
 %include "inc/errors.asm"
+%include "inc/symbols.asm"
 
 section .text
 
@@ -98,3 +100,10 @@ findChar:
 	mov	rax,	-1
 	pop	rbx
 	ret
+
+properExit:
+	push	rax
+	call	resetIoctl
+	pop	rdi
+	mov	rax,	SYS_EXIT
+	syscall

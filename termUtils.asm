@@ -8,6 +8,7 @@ global printToPos
 
 section .text
 ;https://stackoverflow.com/questions/3305005/how-do-i-read-single-character-input-from-keyboard-using-nasm-assembly-under-u
+;/include/uapi/asm-generic/termbits.h in kernel
 setIoctl:
 	cmp	byte	[Ioctl.isCustomTermMode],	0
 	je	.notSetYet
@@ -23,23 +24,36 @@ setIoctl:
 	mov	rsi,	TCGETS
 	mov	rdx,	Ioctl.termios
 	syscall
-	mov	eax,	dword	[Ioctl.termios + 12]
-	mov	dword	[Ioctl.orig_c_lflag],	eax
-	and	dword	[Ioctl.termios + 12],	!1010b
+	mov	rax,	qword	[Ioctl.termios]
+	mov	qword	[Ioctl.orig_flag],	rax
+	mov	rax,	qword	[Ioctl.termios + 8]
+	mov	qword	[Ioctl.orig_flag + 8],	rax
+	; We want UTF8, don't care about anything else
+	mov	dword	[Ioctl.termios],	100000000000000b
+	mov	dword	[Ioctl.termios + 4],	0
+	; eight bits per byte
+	or	dword	[Ioctl.termios + 8],	110000b
+	mov	dword	[Ioctl.termios + 12],	0
+	movzx	eax,	word	[Ioctl.termios + 22]
+	mov	word	[Ioctl.orig_Vthings],	ax
+	; Always READ at least one character
+	mov	byte	[Ioctl.termios + 23], 	1
+	; no waiting time for READ
+	mov	byte	[Ioctl.termios + 22],	0
 	mov	rax,	SYS_IOCTL
 	TCSETS	equ	0x5402
 	mov	rsi,	TCSETS
 	syscall
-	mov     rax,    SYS_WRITE
-        mov     rdi,    STDOUT
-        mov     rsi,    .alternateScreenMsg
-        mov     rdx,    (.alternateScreenMsgEnd - .alternateScreenMsg)
-        syscall
+	mov	rax,	SYS_WRITE
+	mov	rdi,	STDOUT
+	mov	rsi,	.alternateScreenMsg
+	mov	rdx,	(.alternateScreenMsgEnd - .alternateScreenMsg)
+	syscall
 	ret
 
 section .data
 .alternateScreenMsg:
-	db `\e[?1049h`
+	db `\e[?1049h\e[2J`
 .alternateScreenMsgEnd:
 
 section .text
@@ -51,18 +65,22 @@ resetIoctl:
 	syscall
 .notSetYet:
 	mov	byte	[Ioctl.isCustomTermMode],	0
-	mov	eax,	dword	[Ioctl.orig_c_lflag]
-	mov	dword	[Ioctl.termios + 12],	eax
+	mov	rax,	qword	[Ioctl.orig_flag]
+	mov	qword	[Ioctl.termios],	rax
+	mov	rax,	qword	[Ioctl.orig_flag + 8]
+	mov	qword	[Ioctl.termios + 8],	rax
+	movzx	eax,	word	[Ioctl.orig_Vthings]
+	mov	word	[Ioctl.termios + 22],	ax
 	mov	rax,	SYS_IOCTL
 	mov	rdi,	STDIN
 	mov	rsi,	TCSETS
 	mov	rdx,	Ioctl.termios
 	syscall
-	mov     rax,    SYS_WRITE
-        mov     rdi,    STDOUT
-        mov     rsi,    .alternateScreenMsg
-        mov     rdx,    (.alternateScreenMsgEnd - .alternateScreenMsg)
-        syscall
+	mov	rax,	SYS_WRITE
+	mov	rdi,	STDOUT
+	mov	rsi,	.alternateScreenMsg
+	mov	rdx,	(.alternateScreenMsgEnd - .alternateScreenMsg)
+	syscall
 	ret
 
 section .data
@@ -77,7 +95,8 @@ Ioctl:
 section .bss
 
 .termios:	resb	36
-.orig_c_lflag:	resb	4
+.orig_flag:	resb	16
+.orig_Vthings:	resb	2
 
 section .text
 
@@ -159,12 +178,13 @@ section .data
 section .text
 
 printToPos:
-	mov	r10,	rdx
+	push	rax
+	mov	rax,	rdx
 	mov	rdx,	.messageMove + 2
 	call	DWToStr
 	lea	rdx,	[.messageMove + rax + 3]
 	mov	[rdx - 1],	byte	';'
-	mov	rax,	r10
+	pop	rax
 	call	DWToStr
 	add	rdx,	rax
 	mov	[rdx],	byte	'H'
