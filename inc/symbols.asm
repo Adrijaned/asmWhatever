@@ -136,3 +136,18 @@ extern properExit
 ;; width, height are aliases of x, y
 extern screenDimensions.x, screenDimensions.y
 extern screenDimensions.width, screenDimensions.height
+
+;; Initializes the first level of the game from file.
+;; IN:
+;; OUT:
+;; DIRTY:
+;; - rax
+;; - rdi
+;; - rsi
+;; - rdx
+;; - r8
+;; - r9
+;; - r10
+;; ERR:
+;; - E_WRONGDIR if the level file was not found
+extern initWorld

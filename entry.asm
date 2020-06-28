@@ -13,6 +13,7 @@ _start:
 ;TODO recheck whenever poll is zero in .loop
 	mov	word	[screenDimensions.x],	ax
 	mov	word	[screenDimensions.y],	dx
+	call	initWorld
 .loop:
 	mov	rax,	SYS_READ
 	mov	rdi,	STDIN

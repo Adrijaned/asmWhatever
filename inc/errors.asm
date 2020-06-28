@@ -3,3 +3,4 @@ ENOSYS		equ	38
 EINVAL		equ	22
 E_ENOTSUP	equ	100	; ENETDOWN, redefined
 E_LOGERROR	equ	61
+E_WRONGDIR	equ	36

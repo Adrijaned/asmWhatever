@@ -51,7 +51,7 @@ DWToStr:
 	push	r11
 	push	r12
 	push	rdx
-	xor	r11d,	r11d
+	xor	r11,	r11
 	mov	r12,	10
 .loop:
 	xor	edx,	edx
