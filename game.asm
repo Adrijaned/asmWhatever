@@ -26,60 +26,62 @@ processKey:
 moveUp:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	call	popEntity
 	dec	word	[player.y]
-	jnz	.notAtTop
+	jnl	.notAtTop
 	inc	word	[player.y]
 .notAtTop:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	mov	edx,	3
+	call	pushEntity
 	call	renderLevel
 	ret
 
 moveLeft:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	call	popEntity
 	dec	word	[player.x]
-	jnz	.notLeft
+	jnl	.notLeft
 	inc	word	[player.x]
 .notLeft:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	mov	edx,	3
+	call	pushEntity
 	call	renderLevel
 	ret
 
 moveDown:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	call	popEntity
 	inc	word	[player.y]
-	mov	ax,	word	[screenDimensions.y]
-	cmp	word	[player.y],	ax
+	cmp	word	[player.y],	255
 	jbe	.notDown
 	dec	word	[player.y]
 .notDown:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	mov	edx,	3
+	call	pushEntity
 	call	renderLevel
 	ret
 
 moveRight:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	call	popEntity
 	inc	word	[player.x]
-	mov	dx,	word	[screenDimensions.x]
-	cmp	word	[player.x],	dx
+	cmp	word	[player.x],	255
 	jbe	.notRight
 	dec	word	[player.x]
 .notRight:
 	movzx	rax,	word	[player.x]
 	movzx	rbx,	word	[player.y]
-	call	drawTile
+	mov	edx,	3
+	call	pushEntity
 	call	renderLevel
 	ret	
 
@@ -145,9 +147,11 @@ renderLevel:
 	mov	ebx,	0
 	jmp	.hFine
 .hNotNeg:
-	cmp	ebx,	255
+	lea	r14,	[rbx + rdi]
+	cmp	r14,	256
 	jng	.hFine
-	mov	ebx,	255
+	mov	ebx,	256
+	sub	ebx,	edi
 .hFine:
 	mov	word	[screenLeftTop.x],	bx
 .fine2:
@@ -177,9 +181,11 @@ renderLevel:
 	mov	ebx,	0
 	jmp	.vFine
 .vNotNeg:
-	cmp	ebx,	255
+	lea	r14,	[rbx + r11]
+	cmp	r14,	256
 	jng	.vFine
-	mov	ebx,	255
+	mov	ebx,	256
+	sub	rbx,	r11
 .vFine:
 	mov	word	[screenLeftTop.y],	bx
 .fine4:
@@ -211,33 +217,15 @@ renderLevel:
 ;; rbx - y
 drawTile:;TODO ensure tile in window
 	push	rax
-	push	rbx
-	xchg	rax,	rbx
-	push	rbx
-	mov	rbx,	256
-	mul	rbx
-	pop	rbx
-	add	rax,	rbx
-	pop	rbx
-	movzx	r11,	byte	[currentLevel]
-	mov	r11,	qword	[levels + r11]
-	cmp	word	[r11 + 2 * rax],	1
+	call	getTileAddress
+	cmp	word	[r11],	1
 	jb	.wall
 	je	.floor
-	cmp	word	[r11 + 2 * rax],	2
+	cmp	word	[r11],	2
 	je	.door
-	cmp	word	[r11 + 2 * rax],	3
+	cmp	word	[r11],	3
 	je	.entity
-	push	rax
-	movzx	eax,	word	[r11 + 2 * rax]
-	mov	rdx,	dbgMsg
-	call	DWToStr
-	mov	rdi,	rdx
-	mov	rsi,	rax
-	movzx	edx,	word	[screenDimensions.y]
-	mov	eax,	1
-call	printToPos
-	pop	rax
+	jmp	.entity
 .wall:
 	mov	rdi,	charTable.wall
 	jmp	.tileDetermined
@@ -278,6 +266,65 @@ call	printToPos
 ;; rax - ret tilecolor (ANSI 8-bit index)
 getTileColor:
 	mov	rax,	8 ;TODO logic
+	ret
+
+;; ax - x
+;; bx - y
+;; dx - ret entityIdx
+;; CLEAN
+popEntity:
+	call	getTileAddress
+	movzx	rdx,	word	[r11]
+	push	r12
+	movzx	r12,	word	[entities + 8 * rdx + 2]
+	mov	word	[entities + 2 + 8 * rdx],	0
+	cmp	r12,	0
+	jne	.floor
+	mov	word	[r11],	1
+	jmp	.done
+.floor:
+	mov	word	[r11],	r12w
+.done:
+	pop	r12
+	ret
+
+;; ax - x
+;; bx - y
+;; dx - entityIdx
+;; CLEAN
+pushEntity:
+	call	getTileAddress
+	movzx	ecx,	word	[r11]
+	mov	word	[r11],	dx
+	cmp	ecx,	3
+	jbe	.floor
+	mov	word	[entities + 2 + 8 * rdx],	cx
+	jmp	.done
+.floor:
+	mov	word	[entities + 2 + 8 * rdx],	0
+.done:
+	ret	
+
+;; ax - x
+;; bx - y
+;; r11 - tile address
+;; CLEAN
+getTileAddress:
+	push	rax
+	push	rbx
+	xchg	rax,	rbx
+	push	rbx
+	mov	rbx,	256
+	push	rdx	; push rdx because mul clobbers
+	mul	rbx
+	pop	rdx
+	pop	rbx
+	add	rax,	rbx
+	pop	rbx
+	movzx	r11,	byte	[currentLevel]
+	mov	r11,	qword	[levels + r11]
+	lea	r11,	[r11 + 2 * rax]
+	pop	rax
 	ret
 
 section .data
