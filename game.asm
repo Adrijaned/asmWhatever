@@ -86,28 +86,7 @@ moveRight:
 	ret	
 
 initWorld:
-	mov	rax,	SYS_OPEN
-	mov	rdi,	level0fname
-	mov	rsi,	O_RDONLY
-	mov	rdx,	0
-	syscall
-	cmp	rax,	-1
-	jg	.openedFine
-	mov	rax,	36
-	call	properExit
-.openedFine:
-	mov	r8,	rax
-	mov	rax,	SYS_MMAP
-	mov	rdi,	0
-	mov	rsi,	(1 << 17)
-	mov	rdx,	(PROT_READ | PROT_WRITE)
-	mov	r10,	MAP_PRIVATE
-	mov	r9,	0
-	syscall
-	mov	qword	[levels],	rax
-	mov	rdi,	r8
-	mov	rax,	SYS_CLOSE
-	syscall
+	mov	qword	[levels],	level0
 	mov	rax,	qword	[predefEntities]
 	mov	qword	[entities + 24],	rax
 	ret
@@ -346,14 +325,14 @@ charTable:
 
 currentLevel:	db	0
 
-level0fname:	db	'data/level_0.dat.bac', 0
-
 colorMsg:	db	`\e[38;5;`
 .colStart:	db	0,0,0,0,0,0,0,'m'
 .msgEnd:
 
 predefEntities:
 	dw 1,0,0,0 ;player
+level0:
+	incbin	"data/level_0.dat.bac"
 
 section	.bss
 
